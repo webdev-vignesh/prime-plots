@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom"
 import { signInFailure, signInStart, signInSuccess } from "../redux/user/userSlice";
+import OAuth from "../components/OAuth";
 
 const SignIn = () => {
   
@@ -42,7 +43,8 @@ const SignIn = () => {
         return;
       }
       // if user sign up successful
-      dispatch(signInSuccess(data));
+      console.log(data.data)
+      dispatch(signInSuccess(data.data));
       navigate("/");
     } 
     catch (error) {
@@ -51,8 +53,8 @@ const SignIn = () => {
   }
 
   return (
-    <div className="p-3 max-w-lg mx-auto mb-24">
-      <h1 className="text-3xl text-center font-semibold my-7">Sign In</h1>
+    <div className="p-3 max-w-lg mx-auto">
+      <h1 className="text-3xl text-center font-bold my-7">Sign In</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input 
           type="email"
@@ -74,6 +76,7 @@ const SignIn = () => {
         >
           {loading ? "Loading..." : "Sign In"}
         </button>
+        <OAuth />
       </form>
       <div className="flex gap-2 mt-5">
         <p>Not a User?</p>
