@@ -1,13 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {getDownloadURL, getStorage, ref, uploadBytesResumable} from "firebase/storage";
 import {app} from "../firebase";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const CreateListing = () => {
+const UpdateListing = () => {
 
     const currentUser = useSelector((state) => state.user);
     const navigate = useNavigate();
+    const params = useParams();
 
     // local state
     const [files, setFiles] = useState([]);
@@ -29,6 +30,21 @@ const CreateListing = () => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(false);
     const [loading, setLoading] = useState(false);
+
+
+    useEffect(() => {
+        const fetchListing = async () => {
+            const lisitingId = params.id;
+            const res = await fetch(`/api/listing/get/${lisitingId}`);
+            const data = await res.json();
+            if (data.success === false) {
+                console.log(data.message);
+                return;
+            }
+            setFormData(data);
+        }
+        fetchListing();
+    }, [])
 
     // function to handle upload button
     const handleImageSubmit = (e) => {
@@ -123,7 +139,7 @@ const CreateListing = () => {
             if (+formData.regularPrice < +formData.discountPrice) return setError("Discount price must be lower than regular price");
             setLoading(true);
             setError(false);
-            const res = await fetch("/api/listing/create", {
+            const res = await fetch(`/api/listing/update/${params.id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -138,7 +154,7 @@ const CreateListing = () => {
             if (data.success === false) {
                 setError(data.message);
             }
-            navigate(`/listing/${data.listing._id}`);
+            navigate(`/listing/${data._id}`);
         }
         catch (error) {
             setError(error.message);
@@ -148,7 +164,7 @@ const CreateListing = () => {
 
   return (
     <main className="p-6 max-w-4xl mx-auto border border-gray-300 rounded-lg shadow-lg mt-4">
-        <h1 className="text-3xl font-semibold text-center mb-7">Create a Listing</h1>
+        <h1 className="text-3xl font-semibold text-center mb-7">Update Listing</h1>
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
             <div className="flex flex-col gap-4 flex-1">
                 <input 
@@ -335,8 +351,8 @@ const CreateListing = () => {
             >
                 {
                     loading
-                    ? "Creating..."
-                    : "Create Listing"
+                    ? "Updating..."
+                    : "Update Listing"
                 }
             </button>
             {error && <p className="text-red-700 text-sm">{error}</p>}
@@ -346,4 +362,4 @@ const CreateListing = () => {
   )
 }
 
-export default CreateListing
+export default UpdateListing
