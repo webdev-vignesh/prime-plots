@@ -1,6 +1,13 @@
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./error.js";
 
+/**
+ * Get the token from cookies
+ * No token present, then return error
+ * Verify the cookie token with our JWT secret key
+ * if token valid, then pass to next middleware
+ */
+
 export const verifyToken = (req, res, next) => {
     // getting the token from cookies
     const token = req.cookies.access_token;
