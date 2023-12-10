@@ -14,6 +14,10 @@ const Profile = () => {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [showListingsError, setShowListingsError] = useState(false);
+  const [listingLoad, setListingLoad] = useState(false);
+  const [userListings, setUserListings] = useState([]);
+  const [deleteListingError, setDeleteListingError] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -22,7 +26,6 @@ const Profile = () => {
     const fileName = new Date().getTime() + file.name;
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, file);
-
 
     console.log(formData)
 
@@ -92,6 +95,7 @@ const Profile = () => {
         dispatch(deleteUserFailure(data.message));
         return;
       }
+
       dispatch(deleteUserSuccess(data));
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
@@ -110,6 +114,43 @@ const Profile = () => {
       dispatch(signOutUserSuccess(data));
     } catch (error) {
       dispatch(signOutUserFailure(error.message));
+    }
+  }
+
+  const handleShowListings = async () => {
+    try {
+      setShowListingsError(false);
+      setListingLoad(true);
+      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const data = await res.json();
+      if (data.success === false) {
+        setListingLoad(false);
+        setShowListingsError(true);
+        return;
+      }
+
+      setListingLoad(false);
+      setUserListings(data);
+    } catch (error) {
+      setListingLoad(false);
+      setShowListingsError(error);
+    }
+  }
+
+  const handleDeleteListing = async (_id) => {
+    try {
+      const res = await fetch(`/api/listing/delete/${_id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        console.log(data.message);
+      }
+
+      setUserListings((prev) => prev.filter((listing) => listing._id !== _id))
+
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -181,19 +222,50 @@ const Profile = () => {
           className="border p-3 rounded-lg"
           onChange={handleChange}
         />
-        <button disabled={loading} className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-90 disabled:opacity-80">
+        <button disabled={loading} className="bg-green-700 text-white rounded-lg p-3 uppercase hover:opacity-90 disabled:opacity-80">
           {loading ? "Loading..." : "Update"}
         </button>
-        <Link to={"/create-listing"} className="bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95">
+        <Link to={"/create-listing"} className="bg-slate-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95">
           Create Listing
         </Link>
       </form>
       <div className="flex justify-between mt-5">
         <span onClick={handleDelete} className="text-red-700 cursor-pointer hover:underline">Delete Account</span>
-        <span onClick={handleSignOut} className="text-red-700 cursor-pointer hover:underline">Sign Out</span>
+        <span onClick={handleSignOut} className="text-white cursor-pointer hover:opacity-75 border border-red-500 p-1 rounded-lg bg-red-500">Sign Out</span>
       </div>
       <p className="text-red-700 mt-5">{error ? error : ""}</p>
       <p className="text-green-700 mt-5">{updateSuccess ? "User is updated successfully!" : ""}</p>
+      <button className="text-green-700 w-full hover:text-white hover:bg-green-700 p-2 rounded-lg mt-5" onClick={handleShowListings}>
+        { listingLoad ? "Loading..." : "Show Listings"}
+      </button>
+      <p className="text-red-700 mt-5">{showListingsError ? "Error showing listings" : ""}</p>
+
+      {
+        userListings && userListings.length > 0 && 
+        <div className="">
+          <h1 className="text-center my-7 text-2xl font-semibold underline">Your Listings</h1>
+          <p className="text-red-500 space-x-4">{deleteListingError ? deleteListingError : ""}</p>
+        {userListings.map((listing) => (
+          <div key={listing._id}  className="flex items-center justify-between border rounded-lg p-3 gap-4 my-6">
+            <Link to={`/listing/${listing._id}`}>
+              <img 
+                src={listing.imageUrls[0]} 
+                alt="listing-image" 
+                className="h-16 w-16 object-contain rounded-lg" />
+            </Link>
+            <Link to={`/listing/${listing._id}`} className="hover:underline text-slate-700 font-semibold flex-1 truncate">
+              <p >{listing.title}</p>
+            </Link>
+            <div className="flex flex-col items-center">
+              <button className="text-red-700 uppercase" onClick={() => handleDeleteListing(listing._id)}>Delete</button>
+              <Link to={`/update-listing/${listing._id}`}>
+                <button className="text-green-700 uppercase">Edit</button>
+              </Link>
+            </div>
+          </div>
+        ))}
+        </div>
+      }
     </div>
   )
 }
